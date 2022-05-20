@@ -6,6 +6,7 @@ const jwt = require("../../helpers/jwt.admin");
 const jwt2 = require("jsonwebtoken");
 const AT = process.env.JWT_ADMIN_AT;
 exports.Login = async (req, res, next) => {
+  console.log(req.body)
   try {
     const userInputs = await validate.Login.validateAsync(req.body);
 
@@ -45,6 +46,7 @@ exports.Login = async (req, res, next) => {
       );
     }
   } catch (e) {
+    console.log(e)
     next(e);
   }
 };

@@ -14,8 +14,8 @@ const connectionPool = mysql.createPool({
   debug: false,
   waitForConnections: true,
   queueLimit: 0,
-  // port: 25060, // for production
-  port: 3306, // for developement
+  port: 25060, // for production
+  // port: 3306, // for developement
 });
 
 module.exports = connectionPool.promise();
