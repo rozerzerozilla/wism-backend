@@ -15,6 +15,7 @@ exports.Dashboard = (req, res, next) => {
 };
 
 exports.GetBusiness = async (req, res, next) => {
+  const view = parseInt(req.query.view)
   try {
     const token = req.headers["authorization"].split(" ")[1];
     const [dataFound] = await database.execute(
@@ -32,7 +33,10 @@ exports.GetBusiness = async (req, res, next) => {
     }
 
     //fetch the data from tables
-    const [client] = await database.query(
+
+    const id = parseInt(req.params.id);
+    //fetch the data from tables
+    const [client] = view === 1 ? await database.query(
       `SELECT business.id, business.name as bname,business.id as bid, business.telephone, business.website,business.info,
       business.ad1,business.ad2,business.address1,business.address2,business.street,
       business.city,business.state,business.postalcode,business.lat,business.lng, business.subcategories,
@@ -42,10 +46,21 @@ exports.GetBusiness = async (req, res, next) => {
       categories.id = business.category 
       LEFT JOIN holidays ON holidays.business_id = business.id
       WHERE business.id = ${exists[0].business_id}`
-    );
+    ) :
+      await database.query(
+        `SELECT business.id, business.name as bname,business.id as bid, business.telephone, business.website,business.info,
+      business.ad1,business.ad2,business.address1,business.address2,business.street,
+      business.city,business.state,business.postalcode,business.lat,business.lng, business.subcategories,
+      business.photo as image,business.status, business.open_all_time, categories.id as category, 
+      holidays.holidays,holidays.holiday_work_from,holidays.holiday_work_to FROM 
+      business LEFT JOIN categories ON 
+      categories.id = business.category 
+      LEFT JOIN holidays ON holidays.business_id = business.id
+      WHERE business.id = ${exists[0].business_id}`
+      );
 
     if (client[0].subcategories) {
-      const subCategories = JSON.parse(client[0].subcategories).split(",");
+      const subCategories = client[0].subcategories.split(",");
       const [subCatNames] = await database.query(
         `SELECT id, name FROM subcategories WHERE id IN (${subCategories})`
       );
@@ -324,7 +339,7 @@ exports.EditBusiness = async (req, res, next) => {
         userInputs.lng || exists[0].lng || "",
         userInputs.category.toString() || exists[0].category || "",
         userInputs.subcategories
-          ? JSON.stringify(userInputs.subcategories)
+          ? userInputs.subcategories
           : exists[0].subcategories || "",
         JSON.parse(userInputs.open_all_time) ? 1 : 0,
         exists[0].id,
@@ -445,6 +460,7 @@ exports.EditBusiness = async (req, res, next) => {
       res.json({ message: "Successfully updated the business" });
     }
   } catch (e) {
+    console.log(e);
     next(e);
   }
 };
