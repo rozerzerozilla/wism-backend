@@ -917,6 +917,22 @@ exports.EditStaff = async (req, res, next) => {
   }
 };
 
+exports.deleteStaff = async (req, res, next) => {
+  try {
+    await database.query(
+      `DELETE FROM clients_break_time WHERE client_id = ${req.params.id};`
+    );
+    await database.query(
+      `DELETE FROM services_clients WHERE client_id = ${req.params.id}`
+    );
+    const data = await database.query(`DELETE FROM clients WHERE id = ${req.params.id};`);
+    res.status(200).send({ message: "Staff deleted", data: data })
+  } catch (error) {
+    next(error)
+    res.status(200).send({ message: "Unable to delete", error: error });
+  }
+};
+
 /*************TOKENS*********/
 exports.GetTokens = async (req, res, next) => {
   try {

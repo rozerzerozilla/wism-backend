@@ -19,6 +19,8 @@ clientRoutes.post("/tokens", clientController.UpdateTokens);
 
 clientRoutes.put("/staff", clientController.UpdateStaff);
 clientRoutes.put("/editstaff/:id", clientController.EditStaff);
+clientRoutes.delete("/staff/:id", clientController.deleteStaff);
+
 clientRoutes.put("/tokens/:id", clientController.UpdateToken);
 
 clientRoutes.delete("/services/:id", clientController.DeleteServices);

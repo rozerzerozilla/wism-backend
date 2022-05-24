@@ -322,7 +322,7 @@ exports.UpdateProfile = async (req, res, next) => {
         rows[0].password
       );
       if (!isPasswordMatch) throw createErrors.Unauthorized("Wrong password");
-      newData["password"] = await bcrypt.hash(validateProfile.newPassword, 10);
+      newData["password"] = await bcrypt.hash(validateProfile.newPassword, 8);
     } else {
       newData["password"] = rows[0].password;
     }
@@ -478,7 +478,7 @@ exports.GetBusiness = async (req, res, next) => {
       `SELECT business.id, business.name as bname,business.id as bid, business.telephone, business.website,business.info,
       business.ad1,business.ad2,business.address1,business.address2,business.street,
       business.city,business.state,business.postalcode,business.lat,business.lng, business.subcategories,
-      business.photo as image,business.status,business.open_all_time, categories.name as category, 
+      business.photo as image,business.status,business.open_all_time, categories.id as category, 
       holidays.holidays,holidays.holiday_work_from,holidays.holiday_work_to FROM 
       business LEFT JOIN categories ON 
       categories.id = business.category 
@@ -517,6 +517,7 @@ exports.GetBusiness = async (req, res, next) => {
     client[0].users = users;
     res.json(client[0]);
   } catch (e) {
+    console.log(e)
     next(e);
   }
 };
@@ -978,6 +979,7 @@ exports.EditBusiness = async (req, res, next) => {
       res.json({ message: "Successfully updated the business" });
     }
   } catch (e) {
+    console.log(e)
     next(e);
   }
 };
