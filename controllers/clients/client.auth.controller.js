@@ -1,10 +1,131 @@
 const validate = require("../../helpers/joi.client");
 const bcrypt = require("bcrypt");
 const jwt = require("../../helpers/jwt.client");
+const {OTP_generator, addMinutesToDate} = require("../../helpers/utils");
 const database = require("../../db");
 const createErrors = require("http-errors");
 const jwt2 = require("jsonwebtoken");
 const AT = process.env.JWT_CLIENT_AT;
+const Vonage = require('@vonage/server-sdk');
+const fast2sms = require('fast-two-sms');
+const axios = require('axios');
+
+const vonage = new Vonage({
+  apiKey: "0af906ec",
+  apiSecret: "O5MpXy9NUlQElMuZ"
+},{
+  debug: true
+})
+
+
+exports.otpCreate = async (req, res, next) => {
+  try {
+    const userInputs = req.body;
+    const [rows] = await database.execute(
+      `SELECT id FROM clients WHERE phone = ?`,
+      [userInputs.phone]
+    );
+    if (rows.length > 0) {
+      throw createErrors.Conflict(`${userInputs.phone} already exist, please login`);
+    }
+    const otp = Math.floor(1000 + Math.random() * 9000);
+    const resdata = await axios.get(`https://msg2all.com/TRANSAPI/sendsms.jsp?login=maruthi&passwd=maruthi@321&version=v1.0&msisdn=0${req.body.phone}&msg_type=text&msg=Your OTP is : ${otp} . Please Validate the OTP to continue. - Sri Maruthi Rock Drillers&sender_id=SRIMRD`);
+    const resCode = resdata.data.result.status;
+    console.log(resdata.data.result, resCode);
+    if (resCode.statusCode == 0) {
+      var today = new Date();
+      const now = new Date();
+      const expiration_time = addMinutesToDate(now, 10);
+      const insertData = await database.execute(
+        `INSERT INTO otps (otp, expireTime, phone)
+        VALUES(?,?,?)`,
+        [otp, expiration_time, userInputs.phone]
+      );
+      if (insertData[0].insertId) {  
+        res.status(200).send({ message: 'OTP sent successfully to your register mobile number : ' + userInputs.phone, responseStatus: 1 });
+      }
+        
+    } else {
+      if (resCode.errorCode == 120) {
+        res.status(404).send({ message: 'Invalid Mobile Number.', responseStatus: 0 });
+      } else {
+        res.status(404).send({ message: 'Something went wrong, Try after sometime.', responseStatus: 0 });
+      }
+    }
+  } catch (error) {
+    console.log(error)
+    next(error)
+  }
+}
+
+exports.OTPGenarator = async (req, res, next) => {
+
+  try {
+    // const otp = OTP_generator();
+    // var options = {
+    //   authorization: "9mixX2dbk1ceDgTHGMI6slW8UON5Qq3yEF7nBSjftKphPArZua8ejuIZQAmKEqNxPVf7whBnOCFy6kHb",
+    //   message: otp,
+    //   numbers: ['8050849022', '7787995794']
+    // }
+    // fast2sms.sendMessage(options);
+    // res.send({ message: "send sucessfully" });
+
+
+    // const [rows] = await database.execute(
+    //   `SELECT id FROM clients WHERE phone = ?`,
+    //   [userInputs.phone]
+    // );
+    // if (rows.length > 0) {
+    //   throw createErrors.Conflict(`${userInputs.phone} already exist, please login`);
+    // }
+
+    const from = "8050849022"
+    const to = `918050849022`
+    const text = 'A text message sent using the Vonage SMS API'
+
+    console.log("api for otpgen")
+
+
+    await vonage.message.sendSms(from, to, text, (err, responseData) => {
+      if (err) {
+        console.log(err);
+      } else {
+        if (responseData.messages[0]['status'] === "0") {
+          console.log("Message sent successfully.");
+          return res.send({ message: responseData.messages[0] });
+        } else {
+          console.log(`Message failed with error: ${responseData.messages[0]['error-text']}`);
+          return res.send({ message: responseData.messages[0]['error-text'] });
+        }
+      }
+    })
+    // const otp = OTP_generator();
+    // const now = new Date();
+    // const expiration_time = addMinutesToDate(now, 10);
+    // const passwordHash = await bcrypt.hash(userInputs.phone, 8);
+    // const insertData = await database.execute(
+    //   `INSERT INTO clients (name, phone, username, password, role, otp, adate, OTPexpirationTime) 
+    //   VALUES(?,?,?,?,?,?,?)`,
+    //   [
+    //     userInputs.name,
+    //     userInputs.phone,
+    //     userInputs.phone,
+    //     passwordHash,
+    //     1,
+    //     otp,
+    //     today,
+    //     expiration_time
+    //   ]
+    // );
+    // if (insertData[0].insertId) {
+    //   res.status(200).send({otp:otp})
+    // }
+  } catch (error) {
+    
+  }
+}
+
+
 exports.Register = async (req, res, next) => {
   try {
     const userInputs = await validate.Register.validateAsync(req.body);
@@ -33,10 +154,9 @@ exports.Register = async (req, res, next) => {
 
       today = dd + "-" + mm + "-" + yyyy;
 
-      const passwordHash = await bcrypt.hash(userInputs.password, 10);
+      const passwordHash = await bcrypt.hash(userInputs.phone, 8);
       const insertData = await database.execute(
-        `INSERT INTO clients (name, phone, username, password, role, otp, adate) 
-      VALUES(?,?,?,?,?,?,?)`,
+        `INSERT INTO clients (name, phone, username, password, role, otp, adate) VALUES(?,?,?,?,?,?,?)`,
         [
           userInputs.name,
           userInputs.phone,
