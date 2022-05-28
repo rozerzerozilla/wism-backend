@@ -31,7 +31,7 @@ exports.otpCreate = async (req, res, next) => {
     const otp = Math.floor(1000 + Math.random() * 9000);
     const resdata = await axios.get(`https://msg2all.com/TRANSAPI/sendsms.jsp?login=maruthi&passwd=maruthi@321&version=v1.0&msisdn=0${req.body.phone}&msg_type=text&msg=Your OTP is : ${otp} . Please Validate the OTP to continue. - Sri Maruthi Rock Drillers&sender_id=SRIMRD`);
     const resCode = resdata.data.result.status;
-    console.log(resdata.data.result, resCode);
+    console.log(resdata.data, resCode);
     if (resCode.statusCode == 0) {
       var today = new Date();
       const now = new Date();
@@ -42,7 +42,12 @@ exports.otpCreate = async (req, res, next) => {
         [otp, expiration_time, userInputs.phone]
       );
       if (insertData[0].insertId) {  
-        res.status(200).send({ message: 'OTP sent successfully to your register mobile number : ' + userInputs.phone, responseStatus: 1 });
+        res.status(200).send({
+          message: 'OTP sent successfully to your register mobile number : ' + userInputs.phone,
+          responseStatus: 1,
+          otp: otp,
+          id: insertData[0].insertId
+        });
       }
         
     } else {
@@ -51,6 +56,34 @@ exports.otpCreate = async (req, res, next) => {
       } else {
         res.status(404).send({ message: 'Something went wrong, Try after sometime.', responseStatus: 0 });
       }
+    }
+  } catch (error) {
+    console.log(error)
+    next(error)
+  }
+}
+
+exports.verifyOtp = async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id)
+    const userInputs = req.body;
+    const [rows] = await database.execute(
+      `SELECT * FROM otps WHERE id = ?`,
+      [id]
+    );
+    if (rows.length <= 0) {
+      throw createErrors.Conflict(`No data found`);
+    }
+    if (rows[0].otp == userInputs.otp) {
+      const existExpireTime = new Date(rows[0].expireTime).getTime();
+      const presentExpireTime = new Date().getTime();
+      if (existExpireTime === presentExpireTime) {
+        res.status(500).send({ message: 'Time expired', validated: 0 });
+      } else {
+        res.status(200).send({ message: 'OTP validated successfully for mobile number ', validated: 1 });
+      }
+    } else {
+      res.status(501).send({ message: 'Wrong Otp', validated: 0 });
     }
   } catch (error) {
     console.log(error)
