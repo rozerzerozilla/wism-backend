@@ -16,6 +16,7 @@ exports.Dashboard = (req, res, next) => {
 
 exports.GetBusiness = async (req, res, next) => {
   const view = parseInt(req.query.view)
+  console.log(view);
   try {
     const token = req.headers["authorization"].split(" ")[1];
     const [dataFound] = await database.execute(
@@ -61,6 +62,7 @@ exports.GetBusiness = async (req, res, next) => {
 
     if (client[0].subcategories) {
       const subCategories = client[0].subcategories.split(",");
+      console.log(subCategories);
       const [subCatNames] = await database.query(
         `SELECT id, name FROM subcategories WHERE id IN (${subCategories})`
       );
@@ -79,6 +81,7 @@ exports.GetBusiness = async (req, res, next) => {
 
     res.json(client[0]);
   } catch (e) {
+    console.log(e)
     next(e);
   }
 };
@@ -118,6 +121,8 @@ exports.PostBusiness = async (req, res, next) => {
     if (results.status) {
       dist = results?.address.city;
     }
+
+    console.log(results);
     //add the business
     //insert the business details
     const insertBusiness = await database.execute(
@@ -140,7 +145,7 @@ exports.PostBusiness = async (req, res, next) => {
         userInputs.lat || "",
         userInputs.lng || "",
         userInputs.category || "",
-        JSON.stringify(userInputs.subcategories),
+        userInputs.subcategories,
         JSON.parse(userInputs.open_all_time) ? 1 : 0,
       ]
     );
