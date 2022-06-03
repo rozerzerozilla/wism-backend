@@ -6,10 +6,15 @@ exports.getLatLng = async (req, res, next) => {
 };
 
 exports.getCityName = async (req, res, next) => {
-  const lat = req.query.lat;
-  const lng = req.query.lng;
-  const results = await funGetCityName(lat, lng);
-  res.json(results);
+  try {
+    const lat = req.query.lat;
+    const lng = req.query.lng;
+    const results = await funGetCityName(lat, lng);
+    res.status(200).json(results);
+  } catch (error) {
+    console.log(error)
+    next(error)
+  }
 };
 
 async function funGetLatLng(address) {

@@ -397,6 +397,36 @@ exports.PostServices = async (req, res, next) => {
   }
 };
 
+exports.UpdateService = async (req, res, next) => {
+  
+  try {
+    const { business_id, name, prefix, service_time, description } = req.body
+    const [results] =
+      await database.query(`SELECT * FROM services WHERE id = ${req.params.id}`);
+    
+    const data = await database.query(
+      `UPDATE services SET business_id = '${business_id}', 
+      name = '${name}', prefix = '${prefix}', 
+      service_time = '${service_time}', description = '${description}' WHERE id = ${req.params.id};`
+    );
+    res.status(200).send({ message: "Services updated succesfully", data: data });
+  } catch (error) {
+    next(error)
+    res.status(400).send({ message: "unable to update category", error: error });
+  }
+};
+
+module.exports.DeleteService = async (req, res, next) => {
+
+  try {
+    const results = await database.query(`DELETE FROM services WHERE id = ${req.params.id};`);
+    res.status(200).send({ message: "Service deleted", data: results })
+  } catch (error) {
+    next(error)
+    res.status(200).send({ message: "Unable delete", error: error });
+  }
+}
+
 /**************Business Staffs********************/
 exports.PostBStaff = async (req, res, next) => {
   try {
@@ -818,7 +848,7 @@ exports.EditBusiness = async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);
     if (!id) {
-      throw createErrors.NotFound("No business found!");
+      throw createErrors.NotFound("No business found! for ID" + id);
     }
 
     //get the business details
@@ -828,7 +858,7 @@ exports.EditBusiness = async (req, res, next) => {
     );
 
     if (exists.length === 0) {
-      throw createErrors.NotAcceptable("This business not added any business");
+      throw createErrors.NotAcceptable("This business does not exits!");
     }
 
     const userInputs = await validate.EditBusiness.validateAsync(req.body);

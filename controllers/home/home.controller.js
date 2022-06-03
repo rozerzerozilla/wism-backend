@@ -469,7 +469,7 @@ exports.getSearch = async (req, res, next) => {
       var i = 0;
       for (const b of businesses) {
         if (b.subcategories) {
-          const subCategories = JSON.parse(b.subcategories).split(",");
+          const subCategories = b.subcategories.split(",");
           const q = `SELECT id, name FROM subcategories WHERE id IN (${subCategories})`;
           const [subCatNames] = await database.query(q);
           businesses[i].subcats = subCatNames;
@@ -497,6 +497,7 @@ exports.getSearch = async (req, res, next) => {
 
     res.json(finalData);
   } catch (e) {
+    console.log(e)
     next(e);
   }
 };

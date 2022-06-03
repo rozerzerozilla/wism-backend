@@ -4,6 +4,12 @@ exports.Login = Joi.object({
   password: Joi.string().required().min(6).max(55),
 });
 
+exports.Register = Joi.object({
+  name: Joi.string().required().min(10).max(13),
+  username: Joi.string().required().min(10).max(13),
+  password: Joi.string().required().min(6).max(55),
+});
+
 exports.Validate = Joi.object({
   adminID: Joi.number().required(),
   token: Joi.string().required().trim(),

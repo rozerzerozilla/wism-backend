@@ -29,10 +29,11 @@ exports.otpCreate = async (req, res, next) => {
       throw createErrors.Conflict(`${userInputs.phone} already exist, please login`);
     }
     const otp = Math.floor(1000 + Math.random() * 9000);
-    const resdata = await axios.get(`https://msg2all.com/TRANSAPI/sendsms.jsp?login=maruthi&passwd=maruthi@321&version=v1.0&msisdn=0${req.body.phone}&msg_type=text&msg=Your OTP is : ${otp} . Please Validate the OTP to continue. - Sri Maruthi Rock Drillers&sender_id=SRIMRD`);
-    const resCode = resdata.data.result.status;
-    console.log(resdata.data, resCode);
-    if (resCode.statusCode == 0) {
+    // const resdata = await axios.get(`https://msg2all.com/TRANSAPI/sendsms.jsp?login=maruthi&passwd=maruthi@321&version=v1.0&msisdn=0${req.body.phone}&msg_type=text&msg=Your OTP is : ${otp} . Please Validate the OTP to continue. - Sri Maruthi Rock Drillers&sender_id=SRIMRD`);
+    const ratsms = await axios.get(`https://login.ratsms.com/api/smsapi?key=0dc3967ab08024a3b64ba9b31859bd50&route=9&sender=WISMAP&number=${req.body.phone}&sms=Message&templateid=1507164969494869075`)
+    // const resCode = resdata.data.result.status;
+    console.log(ratsms);
+    if (ratsms) {
       var today = new Date();
       const now = new Date();
       const expiration_time = addMinutesToDate(now, 10);

@@ -18,6 +18,8 @@ adminRouter.put("/business", AdminController.PutBusiness);
 //services
 adminRouter.post("/services", AdminController.PostServices);
 adminRouter.get("/services/:id", AdminController.GetServices);
+adminRouter.patch("/services/:id", AdminController.UpdateService);
+adminRouter.delete("/services/:id", AdminController.DeleteService);
 
 //business saffs
 adminRouter.post("/bstaffs", AdminController.PostBStaff);
