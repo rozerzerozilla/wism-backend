@@ -290,7 +290,7 @@ exports.EditBusiness = async (req, res, next) => {
       "SELECT id, activated FROM clients WHERE token = ?",
       [token]
     );
-
+    
     const [exists] = await database.execute(
       `SELECT * FROM business_clients WHERE client_id = ?`,
       [dataFound[0].id]
@@ -301,7 +301,7 @@ exports.EditBusiness = async (req, res, next) => {
     }
 
     const userInputs = await validate.AddBusiness.validateAsync(req.body);
-
+    
     userInputs.monday = JSON.parse(userInputs.monday);
     userInputs.tuesday = JSON.parse(userInputs.tuesday);
     userInputs.wednesday = JSON.parse(userInputs.wednesday);
@@ -346,7 +346,121 @@ exports.EditBusiness = async (req, res, next) => {
       ]
     );
 
+    console.log(updateBusiness[0])
+
     if (updateBusiness[0].affectedRows) {
+      if (userInputs.subcategories) {
+        //delete earlier subcategories
+        await database.query(
+          `DELETE FROM business_subcat WHERE business_id = ${exists[0].id}`
+        );
+        const inpuCat = userInputs.subcategories.split(",");
+        var subCats = [];
+        inpuCat.map((subcat) => subCats.push([exists[0].id, parseInt(subcat)]));
+        var subCatquery =
+          "INSERT INTO business_subcat(business_id,subcat_id) VALUES ?";
+        await database.query(subCatquery, [subCats]);
+      }
+
+      //save the images
+      if (req.files) {
+        if (req.files.photo) {
+          saveFiles(req.files.photo, "business", "photo", exists[0].id);
+        }
+        if (req.files.ad1) {
+          saveFiles(req.files.ad1, "business", "ad1", exists[0].id);
+        }
+        if (req.files.ad2) {
+          saveFiles(req.files.ad2, "business", "ad2", exists[0].id);
+        }
+      }
+
+      //save the timings
+      let values = [
+        [
+          exists[0].id,
+          "Monday",
+          userInputs.monday.monday_work_from || "",
+          userInputs.monday.monday_work_to || "",
+          userInputs.monday.monday_break_from || "",
+          userInputs.monday.monday_break_to || "",
+        ],
+        [
+          exists[0].id,
+          "Tuesday",
+          userInputs.tuesday.tuesday_work_from || "",
+          userInputs.tuesday.tuesday_work_to || "",
+          userInputs.tuesday.tuesday_break_from || "",
+          userInputs.tuesday.tuesday_break_to || "",
+        ],
+        [
+          exists[0].id,
+          "Wednesday",
+          userInputs.wednesday.wednesday_work_from || "",
+          userInputs.wednesday.wednesday_work_to || "",
+          userInputs.wednesday.wednesday_break_from || "",
+          userInputs.wednesday.wednesday_break_to || "",
+        ],
+        [
+          exists[0].id,
+          "Thursday",
+          userInputs.thursday.thursday_work_from || "",
+          userInputs.thursday.thursday_work_to || "",
+          userInputs.thursday.thursday_break_from || "",
+          userInputs.thursday.thursday_break_to || "",
+        ],
+        [
+          exists[0].id,
+          "Friday",
+          userInputs.friday.friday_work_from || "",
+          userInputs.friday.friday_work_to || "",
+          userInputs.friday.friday_break_from || "",
+          userInputs.friday.friday_break_to || "",
+        ],
+        [
+          exists[0].id,
+          "Saturday",
+          userInputs.saturday.saturday_work_from || "",
+          userInputs.saturday.saturday_work_to || "",
+          userInputs.saturday.saturday_break_from || "",
+          userInputs.saturday.saturday_break_to || "",
+        ],
+        [
+          exists[0].id,
+          "Sunday",
+          userInputs.sunday.sunday_work_from || "",
+          userInputs.sunday.sunday_work_to || "",
+          userInputs.sunday.sunday_break_from || "",
+          userInputs.sunday.sunday_break_to || "",
+        ],
+      ];
+
+      //delete from timings & holidays
+      await database.query(
+        `DELETE FROM timings WHERE business_id = ${exists[0].id}`
+      );
+
+      await database.query(
+        `DELETE FROM holidays WHERE business_id = ${exists[0].id}`
+      );
+
+      var query =
+        "INSERT INTO timings(business_id,day,work_from,work_to,break_from,break_to) VALUES ?";
+      await database.query(query, [values]);
+
+      await database.execute(
+        `INSERT INTO holidays(business_id,holidays,holiday_work_from,holiday_work_to)
+      VALUES(?,?,?,?)
+      `,
+        [
+          exists[0].id,
+          JSON.stringify(userInputs.holidays),
+          userInputs.holidays_working.holiday_work_from,
+          userInputs.holidays_working.holiday_work_to,
+        ]
+      );
+      res.json({ message: "Successfully updated the business" });
+    } else {
       if (userInputs.subcategories) {
         //delete earlier subcategories
         await database.query(

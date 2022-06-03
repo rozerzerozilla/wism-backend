@@ -160,7 +160,7 @@ exports.getBusiness = async (req, res, next) => {
     );
 
     if (client[0].subcategories) {
-      const subCategories = JSON.parse(client[0].subcategories).split(",");
+      const subCategories = client[0].subcategories.split(",");
       const [subCatNames] = await database.query(
         `SELECT id, name FROM subcategories WHERE id IN (${subCategories})`
       );
@@ -196,6 +196,7 @@ exports.getBusiness = async (req, res, next) => {
 
     res.json(client[0]);
   } catch (e) {
+    console.log(e)
     next(e);
   }
 };

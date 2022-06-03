@@ -188,7 +188,7 @@ exports.Register = async (req, res, next) => {
 
       today = dd + "-" + mm + "-" + yyyy;
 
-      const passwordHash = await bcrypt.hash(userInputs.phone, 8);
+      const passwordHash = await bcrypt.hash(userInputs.phone, 10);
       const insertData = await database.execute(
         `INSERT INTO clients (name, phone, username, password, role, otp, adate) VALUES(?,?,?,?,?,?,?)`,
         [
