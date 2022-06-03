@@ -2,8 +2,10 @@ const database = require("../../db");
 const createErrors = require("http-errors");
 const validate = require("../../helpers/joi.admin");
 const path = require("path");
-const URL = "http://localhost:5500/";
-// const URL = "https://api.wism.in/";
+
+// const URL = "http://localhost:5500/";
+const URL = "https://api.wism.in/";
+
 const bcrypt = require("bcrypt");
 const { Client } = require("@googlemaps/google-maps-services-js");
 const QRCode = require("qrcode");
@@ -228,6 +230,17 @@ exports.deleteCategory = async (req, res, next) => {
 exports.AddSubCategory = async (req, res, next) => {
   try {
     const subcategory = await validate.AddSubCategory.validateAsync(req.body);
+    const data = await database.execute(
+      `SELECT * FROM subcategories `,
+    );
+
+    // console.log(data[0], subcategory)
+    for (var i = 0; i < data[0].length; i++){
+      if ((subcategory.name).replace(/ /g, "").toLowerCase() === data[0][i].name.replace(/ /g, "").toLowerCase() &&
+        (subcategory.category_id == data[0][i].category_id)) {
+        throw createErrors.NotImplemented("subcategory already exists");
+      }
+    }
     const insertData = await database.execute(
       `INSERT INTO subcategories(category_id,name) VALUES(?,?)`,
       [subcategory.category_id, subcategory.name]
@@ -403,16 +416,19 @@ exports.UpdateService = async (req, res, next) => {
     const { business_id, name, prefix, service_time, description } = req.body
     const [results] =
       await database.query(`SELECT * FROM services WHERE id = ${req.params.id}`);
-    
+    console.log(results[0]);
+    if (results.length === 0) {
+      throw createErrors.InternalServerError("data not found for updating")
+    }
     const data = await database.query(
-      `UPDATE services SET business_id = '${business_id}', 
+      `UPDATE services SET business_id = '${results[0].business_id}', 
       name = '${name}', prefix = '${prefix}', 
-      service_time = '${service_time}', description = '${description}' WHERE id = ${req.params.id};`
+      service_time = '${service_time}', description = '${description}' WHERE id = ${results[0].id};`
     );
     res.status(200).send({ message: "Services updated succesfully", data: data });
   } catch (error) {
+    console.log(error)
     next(error)
-    res.status(400).send({ message: "unable to update category", error: error });
   }
 };
 
@@ -676,8 +692,8 @@ exports.PostBusiness = async (req, res, next) => {
       //insert the business details
       const insertBusiness = await database.execute(
         `INSERT INTO business 
-    (name, telephone, website, info,address1, address2, street, 
-      city,districts, state,postalcode,lat,lng,category,subcategories,open_all_time, status) 
+    (name, telephone, website, info, address1, address2, street, 
+      city,districts, state, postalcode,lat,lng,category,subcategories,open_all_time, status) 
       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [
           userInputs.bname || "",
