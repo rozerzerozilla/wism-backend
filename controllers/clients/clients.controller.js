@@ -649,6 +649,28 @@ exports.PostServices = async (req, res, next) => {
   }
 };
 
+exports.UpdateService = async (req, res, next) => {
+
+  try {
+    const { name, prefix, service_time, description } = req.body
+    const [results] =
+      await database.query(`SELECT * FROM services WHERE id = ${req.params.id}`);
+    console.log(results[0]);
+    if (results.length === 0) {
+      throw createErrors.InternalServerError("data not found for updating")
+    }
+    const data = await database.query(
+      `UPDATE services SET business_id = '${results[0].business_id}', 
+      name = '${name}', prefix = '${prefix}', 
+      service_time = '${service_time}', description = '${description}' WHERE id = ${results[0].id};`
+    );
+    res.status(200).send({ message: "Services updated succesfully", data: data });
+  } catch (error) {
+    console.log(error)
+    next(error)
+  }
+};
+
 exports.DeleteServices = async (req, res, next) => {
   try {
     const token = req.headers["authorization"].split(" ")[1];

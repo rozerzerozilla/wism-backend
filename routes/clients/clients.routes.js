@@ -18,6 +18,7 @@ clientRoutes.post("/customform", clientController.PostCustomForm);
 clientRoutes.post("/tokens", clientController.UpdateTokens);
 
 clientRoutes.put("/staff", clientController.UpdateStaff);
+clientRoutes.patch("/services/:id", clientController.UpdateService);
 clientRoutes.put("/editstaff/:id", clientController.EditStaff);
 clientRoutes.delete("/staff/:id", clientController.deleteStaff);
 
