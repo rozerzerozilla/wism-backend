@@ -10,7 +10,7 @@ exports.GetHome = async (req, res, next) => {
 exports.Categories = async (req, res, next) => {
   try {
     const [categories] = await database.query(
-      "SELECT id, name,image FROM categories ORDER BY id ASC"
+      "SELECT id, name, image FROM categories ORDER BY id ASC"
     );
     res.json(categories);
   } catch (e) {
@@ -481,18 +481,21 @@ exports.getSearch = async (req, res, next) => {
             { lat: lat, lng: lng },
             { lat: b.lat, lng: b.lng }
           );
+          
           businesses[i].distance = results;
         }
         i++;
       }
 
       //filter the results based on the distance
-      for (bus of businesses) {
-        if (bus.distance) {
-          if (bus.distance.distance[0].distance.value < dist) {
-            finalData.push(bus);
-          }
-        }
+      for (let bus of businesses) {
+        // console.log("inside the serach api", bus)
+        finalData.push(bus);
+        // if (bus.distance) {
+        //   if (bus.distance.distance[0].distance.value < dist) {
+        //     finalData.push(bus);
+        //   }
+        // }
       }
     }
 
@@ -559,6 +562,7 @@ function addMinutes(time, minsToAdd) {
 
 /********************CALCULATE DISTANCE******************/
 async function calculateDistance(source, destination, mode = null) {
+  console.log(source, destination)
   try {
     const geocodingClient = new Client({});
     let params = {
@@ -568,7 +572,7 @@ async function calculateDistance(source, destination, mode = null) {
       key: "AIzaSyDcOuFij8ydq4vGwIFEGE0P9qwad7OPDng",
     };
     const response = await geocodingClient.distancematrix({ params: params });
-
+    console.log(response.data.rows[0].elements)
     if (response) {
       const data = {
         status: true,

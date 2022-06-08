@@ -1,4 +1,5 @@
 const { Client } = require("@googlemaps/google-maps-services-js");
+
 exports.getLatLng = async (req, res, next) => {
   const address = req.query.address;
   const results = await funGetLatLng(address);
@@ -12,26 +13,48 @@ exports.getCityName = async (req, res, next) => {
     const results = await funGetCityName(lat, lng);
     res.status(200).json(results);
   } catch (error) {
-    console.log(error)
+    console.log(error);
     next(error)
   }
 };
+// the getting the details address of the particular map pin
+function getCompleteAddress(obj) {
+  const geocodingClient = new Client({});
+  geocodingClient.elevation({
+      params: {
+        locations: [{ lat: obj.lat, lng: obj.lng }],
+        key: "AIzaSyDcOuFij8ydq4vGwIFEGE0P9qwad7OPDng",
+      },
+      timeout: 1000, // milliseconds
+    })
+    .then((res) => {
+      console.log(res.data);
+    })
+    .catch((e) => {
+      console.log(e.response.data.error_message);
+    });
+}
 
 async function funGetLatLng(address) {
+  console.log(address);
   try {
     const geocodingClient = new Client({});
     let params = {
-      address: address,
+      address: parseInt(address),
       components: "country:IN",
       key: "AIzaSyDcOuFij8ydq4vGwIFEGE0P9qwad7OPDng",
     };
     const response = await geocodingClient.geocode({ params: params });
+    // console.log(response.data.results[0]);
     if (response) {
       const data = {
         status: true,
         lat: response.data.results[0]?.geometry.location.lat,
         lng: response.data.results[0]?.geometry.location.lng,
+        postal_localities: response.data.results[0]?.postcode_localities,
+        address_components: response.data.results[0] ?.address_components,
       };
+      // getCompleteAddress(data)
       return data;
     }
     return { status: false, error: "Something wrong" };
