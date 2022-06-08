@@ -490,12 +490,12 @@ exports.getSearch = async (req, res, next) => {
       //filter the results based on the distance
       for (let bus of businesses) {
         // console.log("inside the serach api", bus)
-        finalData.push(bus);
-        // if (bus.distance) {
-        //   if (bus.distance.distance[0].distance.value < dist) {
-        //     finalData.push(bus);
-        //   }
-        // }
+        // finalData.push(bus);
+        if (bus.distance) {
+          if (bus.distance.distance[0].distance.value < dist) {
+            finalData.push(bus);
+          }
+        }
       }
     }
 
