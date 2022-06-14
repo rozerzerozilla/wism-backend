@@ -23,6 +23,9 @@ adminRouter.delete("/services/:id", AdminController.DeleteService);
 
 //business saffs
 adminRouter.post("/bstaffs", AdminController.PostBStaff);
+adminRouter.get("/bstaffs/:id", AdminController.GetBStaff);
+adminRouter.patch("/bstaffs/:id", AdminController.UpdateBStaff);
+adminRouter.delete("/bstaffs/:id", AdminController.DeleteBStaff);
 
 //categories & sub categories
 adminRouter.get("/categories", AdminController.getCategories);
