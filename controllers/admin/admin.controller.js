@@ -666,7 +666,7 @@ exports.GetBusiness = async (req, res, next) => {
     //get services
     const [services] =
       await database.query(`SELECT id, name, prefix, service_time, description, 
-    (select count(service_id) from services_clients where services_clients.service_id  = id) as counts 
+    (select count(services_clients.id) from services_clients where services_clients.service_id  = services.id) as counts 
     FROM services WHERE business_id = ${id}`);
     client[0].services = services;
 
