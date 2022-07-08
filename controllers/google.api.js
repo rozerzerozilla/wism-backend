@@ -10,7 +10,9 @@ exports.getCityName = async (req, res, next) => {
   try {
     const lat = req.query.lat;
     const lng = req.query.lng;
+    console.log('line 14', lat , lng)
     const results = await funGetCityName(lat, lng);
+    
     res.status(200).json(results);
   } catch (error) {
     console.log(error);
@@ -43,16 +45,18 @@ async function funGetLatLng(address) {
       address: parseInt(address),
       components: "country:IN",
       key: "AIzaSyDcOuFij8ydq4vGwIFEGE0P9qwad7OPDng",
+      // key: "AIzaSyBPi8kETfM3J_MvBYyC8gEqvVeLZc6wCXg",
     };
     const response = await geocodingClient.geocode({ params: params });
-    // console.log(response.data.results[0]);
+    console.log(response.data.results[0]);
     if (response) {
       const data = {
         status: true,
         lat: response.data.results[0]?.geometry.location.lat,
         lng: response.data.results[0]?.geometry.location.lng,
         postal_localities: response.data.results[0]?.postcode_localities,
-        address_components: response.data.results[0] ?.address_components,
+        address_components: response.data.results[0]?.address_components,
+        details: response.data.results[0],
       };
       // getCompleteAddress(data)
       return data;
@@ -75,6 +79,7 @@ async function funGetCityName(lat, lng) {
       const data = {
         status: true,
         address: getCityState(response.data.results[0].address_components),
+        details: response.data.results[0],
       };
       return data;
     }

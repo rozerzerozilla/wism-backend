@@ -14,6 +14,7 @@ homeRoutes.post("/tokens", HomeController.postToken);
 
 //search business
 homeRoutes.get("/search", HomeController.getSearch);
+homeRoutes.get("/getlatlang", GoogleAPI.getLatLng);
 homeRoutes.get("/getcityname", GoogleAPI.getCityName);
 homeRoutes.get("/getdistance", GoogleAPI.getDistance);
 
