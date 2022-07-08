@@ -226,7 +226,6 @@ exports.deleteCategory = async (req, res, next) => {
   }
 };
 
-
 exports.AddSubCategory = async (req, res, next) => {
   try {
     const subcategory = await validate.AddSubCategory.validateAsync(req.body);
@@ -436,6 +435,7 @@ module.exports.DeleteService = async (req, res, next) => {
 
   try {
     const results = await database.query(`DELETE FROM services WHERE id = ${req.params.id};`);
+    await database.query(`DELETE FROM services_clients WHERE service_id = ${req.params.id};`);
     res.status(200).send({ message: "Service deleted", data: results })
   } catch (error) {
     next(error)
@@ -444,6 +444,24 @@ module.exports.DeleteService = async (req, res, next) => {
 }
 
 /**************Business Staffs********************/
+exports.GetBStaff = async (req, res, next) => {
+  try {
+    const id = req.params.id
+    const [staff] = await database.query(`SELECT clients.id, clients.name, clients.email, clients.phone, clients.username, clients.role FROM 
+    clients WHERE id=${id}`);
+    
+    const [break_time] = await database.query(`SELECT clients_break_time.break_time FROM clients_break_time WHERE client_id=${id}`);
+    const [services_clients] = await database.query(`SELECT * FROM services_clients WHERE client_id=${id}`);
+    
+    staff[0].break_time = break_time[0].break_time;
+    staff[0].services_clients = services_clients;
+    console.log(staff);
+    res.status(200).json(staff);
+  } catch (error) {
+    next(error)
+  }
+}
+
 exports.PostBStaff = async (req, res, next) => {
   try {
     const userInputs = await validate.AddBStaffs.validateAsync(req.body);
@@ -467,8 +485,8 @@ exports.PostBStaff = async (req, res, next) => {
 
     today = dd + "-" + mm + "-" + yyyy;
 
-    const passwordHash = await bcrypt.hash(userInputs.password, 10);
-    const insertStaff = await database.execute(
+    const passwordHash = await bcrypt.hash(userInputs.phone, 10);
+    const staff = await database.execute(
       `INSERT INTO 
       clients(name,email,phone,username,password,verified, adate, role) 
     VALUES(?,?,?,?,?,?,?,?)`,
@@ -484,17 +502,17 @@ exports.PostBStaff = async (req, res, next) => {
       ]
     );
 
-    if (insertStaff[0].insertId) {
+    if (staff[0].insertId) {
       //add the clients to business
       await database.execute(
         `INSERT INTO business_clients(business_id,client_id) VALUES(?,?)`,
-        [userInputs.business_id, insertStaff[0].insertId]
+        [userInputs.business_id, staff[0].insertId]
       );
 
       //add the break time
       await database.execute(
         `INSERT INTO clients_break_time(client_id,break_time) VALUES(?,?)`,
-        [insertStaff[0].insertId, userInputs.break_time]
+        [staff[0].insertId, userInputs.break_time]
       );
 
       //add the services to the database
@@ -502,15 +520,98 @@ exports.PostBStaff = async (req, res, next) => {
         const input_services = userInputs.services.split(",");
         var values = [];
         input_services.map((service) =>
-          values.push([parseInt(service), insertStaff[0].insertId])
+          values.push([parseInt(service), staff[0].insertId])
         );
         var query =
-          "INSERT INTO services_clients(service_id,client_id) VALUES ?";
+          "INSERT INTO services_clients(service_id, client_id) VALUES ?";
         await database.query(query, [values]);
       }
       res.json({ message: "Successfully added the staff" });
     }
   } catch (e) {
+    next(e);
+  }
+};
+
+exports.UpdateBStaff = async (req, res, next) => {
+  try {
+    // const userInputs = await validate.AddBStaffs.validateAsync(req.body);
+    const userInputs = req.body;
+    const staffid = req.params.id
+    const [rows] = await database.execute(  `SELECT * FROM clients WHERE id=${parseInt(staffid)}`);
+    
+    if (rows.length <= 0) {
+      throw createErrors.Conflict("no staff found");
+    }
+
+    const staff = await database.query(
+      `UPDATE clients SET name = '${userInputs.name}', 
+      email = '${userInputs.email}' , 
+      phone = '${userInputs.phone}' WHERE id = ${req.params.id};`
+    );
+    
+    //add the clients to business
+    await database.execute( `SELECT * FROM business_clients WHERE client_id=${parseInt(staffid)}`);
+
+    //add the break time
+    await database.query(
+      `UPDATE clients_break_time SET break_time = '${userInputs.break_time}' WHERE client_id = ${parseInt(staffid)};`
+    );
+
+    //add the services to the database
+    console.log(userInputs)
+    if (userInputs.services) {
+      await database.query(
+        `DELETE FROM services_clients WHERE client_id = ${parseInt(staffid)};`
+      );
+      const input_services = userInputs.services.split(",");
+      var values = [];
+      input_services.map((service) =>
+        values.push([parseInt(service), parseInt(staffid)])
+      );
+      var query = "INSERT INTO services_clients(service_id,client_id) VALUES ?";
+      await database.query(query, [values]);
+    }
+    res.json({ message: "Successfully updated the staff" });
+  } catch (e) {
+    console.log(e)
+    next(e);
+  }
+};
+
+exports.DeleteBStaff = async (req, res, next) => {
+  try {
+    // const userInputs = await validate.AddBStaffs.validateAsync(req.body);
+    const userInputs = req.body;
+    const staffid = req.params.id
+    const [rows] = await database.execute(  `SELECT * FROM clients WHERE id=${parseInt(staffid)}`);
+    
+    if (rows.length <= 0) {
+      throw createErrors.Conflict("no staff found");
+    }
+
+    const staff = await database.query(
+      `DELETE FROM clients WHERE id = ${parseInt(staffid)};`
+    );
+    
+    //add the clients to business
+    await database.execute( `DELETE FROM business_clients WHERE client_id=${parseInt(staffid)}`);
+
+    //add the break time
+    await database.query(
+      `DELETE FROM clients_break_time WHERE client_id = ${parseInt(staffid)};`
+    );
+
+    //add the services to the database
+    console.log(userInputs)
+    if (userInputs.services) {
+      await database.query(
+        `DELETE FROM services_clients WHERE client_id = ${parseInt(staffid)};`
+      );
+    }
+    res.json({ message: "Successfully staff Deleted" });
+  } catch (e) {
+    console.log(e)
     next(e);
   }
 };
@@ -565,7 +666,7 @@ exports.GetBusiness = async (req, res, next) => {
     //get services
     const [services] =
       await database.query(`SELECT id, name, prefix, service_time, description, 
-    (select count(service_id) from services_clients where services_clients.service_id  = id) as counts 
+    (select count(services_clients.id) from services_clients where services_clients.service_id  = services.id) as counts 
     FROM services WHERE business_id = ${id}`);
     client[0].services = services;
 
