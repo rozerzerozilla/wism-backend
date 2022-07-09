@@ -451,9 +451,10 @@ exports.GetBStaff = async (req, res, next) => {
     clients WHERE id=${id}`);
     
     const [break_time] = await database.query(`SELECT clients_break_time.break_time FROM clients_break_time WHERE client_id=${id}`);
+    console.log(break_time)
     const [services_clients] = await database.query(`SELECT * FROM services_clients WHERE client_id=${id}`);
     
-    staff[0].break_time = break_time[0].break_time;
+    staff[0].break_time = staff[0].role === 1 ? "00:00-00:00" : break_time[0].break_time;
     staff[0].services_clients = services_clients;
     console.log(staff);
     res.status(200).json(staff);
